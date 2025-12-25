@@ -1,0 +1,8 @@
+2025-12-23 21:58:00
+Power cycled robot.
+Ping responsive before DDS available.
+DDS telemetry began after ~45 seconds.
+Conclusion: boot + DDS discovery latency is normal.
+
+
+

@@ -1,0 +1,7 @@
+2025-12-23 21:42:13
+servo0_data:0.9, servo1_data:0.4, servo2_data:0.4, servo3_data:0, servo4_data:81.1, servo5_data:-0.3, servo6_data:0
+servo0_data:1.0, servo1_data:0.4, servo2_data:0.4, servo3_data:0.1, servo4_data:81.1, servo5_data:-0.3, servo6_data:0
+servo0_data:0.9, servo1_data:0.3, servo2_data:0.4, servo3_data:0, servo4_data:81.1, servo5_data:-0.3, servo6_data:0
+
+
+
