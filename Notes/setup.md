@@ -3,4 +3,6 @@ create a folder called build.
 ```
 mkdir build 
 cd build
-cmake```
+cmake
+```
+Test
