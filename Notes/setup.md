@@ -8,3 +8,6 @@ make
 
 ```
 
+When the robot arm is plugged it takes 10 seconds before we can ping it, then executing anything like /.arm_zero_control takes 1 minute and 10 seconds 
+
+when /.arm_zero_control is executed the zero pose remains even after disconnected from the computer. 
