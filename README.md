@@ -3,11 +3,13 @@
 C++ control SDK and research notebook for the **Unitree D1 robotic arm** over DDS/Ethernet.
 
 **Full guide:** [`d1_guide.ipynb`](d1_guide.ipynb)  
+**JSON command protocol:** [`d1_sdk/PROTOCOL.md`](d1_sdk/PROTOCOL.md)  
 **Official docs:** https://support.unitree.com/home/en/developer/D1Arm_services
 
 ---
 
 ## Quick Start
+Tested on Ubuntu 26.04LTS Resolute Raccoon 
 
 ### New machine setup
 

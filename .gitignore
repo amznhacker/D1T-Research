@@ -2,3 +2,5 @@
 d1_sdk/build/
 d1_sdk/cmake.log
 d1_sdk/make.log
+__pycache__/
+*.pyc
