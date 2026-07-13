@@ -60,8 +60,8 @@ read joint angles   ←─  get_arm_joint_angle   ←─   DDS
 |-------|-------------|--------|--------|
 | 0 | OS setup, bring-up, logging | — | ✅ Done |
 | 1 | Zero & reference integrity | Dec 2025 | ✅ Done |
-| 2 | Single-joint characterization | Jul 2026 | 🔜 Start here |
-| 3 | Multi-joint + safe envelope | Aug 2026 | — |
+| 2 | Single-joint characterization | Jul 2026 | ✅ Done (`phase2-joints-characterized`) |
+| 3 | Multi-joint + safe envelope | Aug 2026 | 🔶 In progress |
 | 4 | FK in Python + hardware validation | Sep 2026 | — |
 | 5 | Jacobians + differential IK | Oct 2026 | — |
 | 6 | Numerical IK + test suite | Nov 2026 | — |
@@ -128,7 +128,7 @@ For each joint: sign correct? typical offset at zero? settle time? max safe angl
 Before running IK, know the arm won't hit itself or the table. Map a conservative safe workspace and confirm joint coupling is understood.
 
 ### What to build
-- `experiments/poses.py` — a Python dict of named poses (7 joint angles in degrees). Start conservative: nothing over ±45°.
+- `experiments/poses.py` — a Python dict of named poses (7 joint angles in degrees). Start conservative: nothing over ±45°. **j6 is the gripper, not a rotation joint** — official range is a 0–65 mm claw stroke with no negative side, so keep j6 in [0, 45] and never command it negative.
 - Extend `send_pose.py` to accept a pose name: `python send_pose.py reach`
 - Extend `log_joints.py` to accept a label argument and auto-name the log file
 

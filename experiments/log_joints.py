@@ -36,11 +36,11 @@ def parse_servo_line(line: str) -> list[float] | None:
     return [float(v) for _, v in pairs]
 
 
-def make_csv_path(label: str) -> Path:
-    """Build a timestamped CSV path under LOGS_DIR."""
+def make_csv_path(label: str, outdir: Path = LOGS_DIR) -> Path:
+    """Build a timestamped CSV path under outdir."""
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     suffix = f"_{label}" if label else ""
-    return LOGS_DIR / f"joints_{stamp}{suffix}.csv"
+    return outdir / f"joints_{stamp}{suffix}.csv"
 
 
 def format_progress(row_count: int, values: list[float]) -> str:
@@ -55,13 +55,15 @@ def main() -> None:
                         help="Stop after this many seconds (default: run until Ctrl-C)")
     parser.add_argument("--label", type=str, default="", metavar="TAG",
                         help="Optional label appended to the CSV filename")
+    parser.add_argument("--outdir", type=Path, default=LOGS_DIR, metavar="DIR",
+                        help=f"Directory for the CSV (default: {LOGS_DIR})")
     args = parser.parse_args()
 
     if not BINARY.exists():
         sys.exit(f"Binary not found: {BINARY}\nRun: cd d1_sdk/build && cmake .. && make")
 
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    csv_path = make_csv_path(args.label)
+    args.outdir.mkdir(parents=True, exist_ok=True)
+    csv_path = make_csv_path(args.label, args.outdir)
 
     print(f"Logging to {csv_path}")
     if args.duration is not None:

@@ -3,6 +3,11 @@
 Cleaned-up reference for the JSON protocol carried inside DDS `ArmString_` messages.
 Source: [Unitree D1 Arm developer docs](https://support.unitree.com/home/en/developer/D1Arm_services).
 
+Joint numbering (official): starting from the base is `0`, to the gripper is `6` —
+so `j0`–`j5` are the 6 arm DOF and `j6` drives the claw (0–65 mm stroke).
+Factory range of motion: J0 ±135°, J1 ±90°, J2 ±90°, J3 ±135°, J4 ±90°, J5 ±135°.
+Control cycle is 10 Hz.
+
 ## Message envelope
 
 Every message — command or feedback — is a JSON string with four top-level fields:
@@ -41,10 +46,10 @@ Sent by you, to the arm. `seq` is whatever you choose.
 | funcode | Function | `data` fields | Notes |
 |---|---|---|---|
 | `1` | Single joint angle control | `id`, `angle`, `delay_ms` | `id` = joint number, `angle` = target angle, `delay_ms` currently unused (set to `0`) |
-| `2` | All joint angle control | `mode`, `angle0`…`angle6` | `mode 0` = smoothed 10 Hz streaming updates; `mode 1` = trajectory-style large smoothing |
+| `2` | All joint angle control | `mode`, `angle0`…`angle6` | `mode 0` = smoothed 10 Hz streaming updates; `mode 1` = trajectory-style large smoothing. `angle6` drives the **gripper**, whose documented range is a 0–65 mm claw stroke — there is no negative side, so never command `angle6 < 0` (the controller tolerated −10 in Phase 2, but that's outside the documented range; command unit is unverified, assumed mm) |
 | `4` | Single joint enable / de-energize | `id`, `mode` | `mode 0` = de-energize (free the joint), `mode 1` = enable |
-| `5` | All joints enable / de-energize | `mode` | Same `mode` semantics as funcode `4`, applied to every joint |
-| `6` | Arm motor power switch | `power` | `power 0` = power off, `power 1` = power on |
+| `5` | All joints enable / de-energize | `mode` | Same `mode` semantics as funcode `4`, applied to every joint. Official docs: `mode` actually accepts `0`–`80000` as a lock level — `0` fully unloaded (free), `80000` fully locked |
+| `6` | Arm motor power switch | `power` | `power 0` = power off, `power 1` = power on. Usable as a software emergency stop |
 | `7` | Return to zero posture | *(none)* | No `data` field at all |
 
 **Examples:**
@@ -64,7 +69,7 @@ Pushed continuously by the arm. `seq` is always `10`.
 | funcode | Function | `data` fields | Notes |
 |---|---|---|---|
 | `1` | Joint angle feedback | `angle0`…`angle6` | Real-time joint angles, pushed at 10 Hz |
-| `3` | Arm status feedback | `enable_status`, `power_status`, `error_status` | Each is `1` = OK/enabled/powered, `0` = disabled/off/faulted |
+| `3` | Arm status feedback | `enable_status`, `power_status`, `error_status` | Each is `1` = OK/enabled/powered, `0` = disabled/off/faulted. The official doc is inconsistent about the second field's name (`pow_status` in its table vs `power_status` in its example) — if parsing this message, verify which one the firmware actually emits |
 | `4` | Motor online status | `motor0_status`…`motor6_status` | `1` = motor healthy, `0` = motor fault |
 
 **Example:**
@@ -96,3 +101,39 @@ Sent back by the arm in direct response to a command you sent on `address: 1`. `
 | [get_arm_joint_angle.cpp](src/get_arm_joint_angle.cpp) | 2 | 1 (via `PubServoInfo_` on `current_servo_angle`), plus raw JSON feedback on `arm_Feedback` |
 
 Funcodes `4` (single-joint enable) and `6` (power switch) aren't wired up as standalone example programs yet.
+
+---
+
+## Onboard driver internals (from the official multi-arm docs)
+
+The arm's onboard controller runs four systemd services that implement the driver
+(note the factory typo in the last name — it really is `subscripber`):
+
+```
+marm_communication.service   # DDS ↔ internal topics bridge (marm_communication_node.cpp)
+marm_control.service         # marm_control_node.cpp
+marm_controller.service      # marm_controller_node.cpp — talks to the servos
+marm_subscripber.service
+```
+
+Source lives on the arm at `~/marm_code/src/`, built with plain `make` in `~/marm_code/build/`.
+
+Internally the driver nodes communicate over these DDS topics (all defined in
+`marm_communication_node.cpp`):
+
+| Topic | Role |
+|---|---|
+| `rt/arm_Command` | External command input (this protocol) |
+| `rt/arm_Feedback` | External JSON feedback output (address 2/3 messages) |
+| `current_servo_angle` | Raw joint angles as `PubServoInfo_` (what `get_arm_joint_angle` reads) |
+| `arm_zero` | Internal zeroing trigger |
+| `set_servo_angle` | Internal servo angle command |
+| `set_servo_angle_control` | Internal servo angle control |
+| `set_servo_dumping` | Internal servo damping/enable |
+
+To run **multiple arms on one LAN**, each arm's topics must be made unique by
+editing these `#define`s in `marm_code/src/*.cpp` (e.g. suffix `_1`), rebuilding,
+and pointing your client at the renamed `rt/arm_Command_1`. When each arm is on
+its **own NIC** instead, no on-arm changes are needed — bind the client with
+`ChannelFactory::Instance()->Init(0, "eth0")`. Operational details (IPs, ssh,
+service commands) are in [D1T_SETUP.md](D1T_SETUP.md).
